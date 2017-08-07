@@ -2,7 +2,7 @@
 
 **Simple Tweets** is an android app that allows a user to view his Twitter timeline and post a new tweet. The app utilizes [Twitter REST API](https://dev.twitter.com/rest/public).
 
-Time spent: **13** hours spent in total
+Time spent: **21** hours spent in total
 
 ## User Stories
 
@@ -51,7 +51,9 @@ The following **additional** features are implemented:
 
 Here's a walkthrough of implemented user stories:
 
-<img src='http://i.imgur.com/link/to/your/gif/file.gif' title='Video Walkthrough' width='' alt='Video Walkthrough' />
+
+<img src='https://github.com/stebrice/WeekThreeProject/blob/master/Simple%20Tweets%20tutorial.gif' title='Simple Tweets Walkthrough' width='' alt='Simple Tweets Walkthrough' />
+<img src='https://github.com/stebrice/WeekThreeProject/blob/master/Simple%20Tweets%20tutorial%20part%20two.gif' title='Simple Tweets Walkthrough part two' width='' alt='Simple Tweets Walkthrough part two' />
 
 GIF created with [LiceCap](http://www.cockos.com/licecap/).
 

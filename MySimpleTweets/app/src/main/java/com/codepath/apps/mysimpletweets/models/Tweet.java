@@ -128,6 +128,7 @@ public class Tweet {
             tweet.user = User.fromJSON(jsonObject.getJSONObject("user"));
             tweet.retweetCount = jsonObject.getLong("retweet_count");
             tweet.favouritesCount = jsonObject.getLong("favourites_count");
+
         } catch (JSONException e) {
             e.printStackTrace();
         }

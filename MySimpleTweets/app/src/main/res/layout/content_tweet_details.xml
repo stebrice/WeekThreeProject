@@ -47,6 +47,8 @@
         android:layout_below="@+id/ivProfileImageDt"
         android:layout_marginTop="@dimen/controls_margin"
         android:textColor="@android:color/black"
+        android:autoLink="all"
+        android:linksClickable="true"
         tools:text="Body Text" />
 
     <TextView
@@ -98,14 +100,15 @@
         android:weightSum="4"
         android:orientation="horizontal"
         >
+
         <ImageButton
             android:id="@+id/ibReply"
-            android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:background="@android:color/transparent"
-            android:src="@drawable/ic_reply"
-            />
+            android:onClick="replyToTweet"
+            android:src="@drawable/ic_reply" />
         <ImageButton
             android:id="@+id/ibRetweet"
             android:layout_weight="1"

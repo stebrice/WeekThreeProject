@@ -39,7 +39,8 @@ import cz.msebera.android.httpclient.Header;
 public class ComposeFragment extends DialogFragment {
     private User user;
     private TwitterClient client;
-    private Tweet lastTweet;
+    private Tweet newTweet;
+    private Tweet tweetToReplyTo;
 
 
     ImageButton ibCancel;
@@ -50,8 +51,9 @@ public class ComposeFragment extends DialogFragment {
     TextView tvUserNameCompose;
     TextView tvScreenNameCompose;
     TextView tvRemainingChars;
+    TextView tvReplyingToTw;
     long currentCharCount = 0;
-    final long maxChars = 140;
+    long maxChars = 140;
     long charsLeft = 140;
 
 
@@ -70,6 +72,25 @@ public class ComposeFragment extends DialogFragment {
         return ComposeFragment;
     }
 
+    public static ComposeFragment newInstance(User user, Tweet tweet) {
+        ComposeFragment ComposeFragment = new ComposeFragment();
+        Bundle args = new Bundle();
+        args.putParcelable("user", Parcels.wrap(user));
+        args.putParcelable("tweet", Parcels.wrap(tweet));
+        ComposeFragment.setArguments(args);
+        return ComposeFragment;
+    }
+
+    public static ComposeFragment newInstance(User user, Tweet tweet, Tweet tweetToReplyTo) {
+        ComposeFragment ComposeFragment = new ComposeFragment();
+        Bundle args = new Bundle();
+        args.putParcelable("user", Parcels.wrap(user));
+        args.putParcelable("tweet", Parcels.wrap(tweet));
+        args.putParcelable("tweet_to_reply_to", Parcels.wrap(tweetToReplyTo));
+        ComposeFragment.setArguments(args);
+        return ComposeFragment;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_compose, container);
@@ -82,7 +103,7 @@ public class ComposeFragment extends DialogFragment {
         client = TwitterApplication.getRestClient();
         setupViews(view);
 
-        getDialog().setTitle("COMPOSE TWEET");
+        getDialog().setTitle("TWEET");
     }
 
     private void setupViews(View viewToUse){
@@ -94,8 +115,27 @@ public class ComposeFragment extends DialogFragment {
         tvUserNameCompose = (TextView) viewToUse.findViewById(R.id.tvUserNameCompose);
         tvScreenNameCompose = (TextView) viewToUse.findViewById(R.id.tvScreenNameCompose);
         tvRemainingChars = (TextView) viewToUse.findViewById(R.id.tvRemainingChars);
-        tvRemainingChars.setText(String.valueOf(maxChars));
+        tvReplyingToTw = (TextView) viewToUse.findViewById(R.id.tvReplyingToTw);
         user = (User) Parcels.unwrap( getArguments().getParcelable("user"));
+        newTweet = (Tweet) Parcels.unwrap(getArguments().getParcelable("tweet"));
+        tweetToReplyTo = (Tweet) Parcels.unwrap(getArguments().getParcelable("tweet_to_reply_to"));
+
+        //if (newTweet.getUid() == 0 || newTweet == null){
+        //    newTweet = new Tweet();
+        //}
+        if (tweetToReplyTo != null){
+            if (tweetToReplyTo.getUid() > 0) {
+                maxChars = 140 - (tweetToReplyTo.getUser().getScreenName().length() + 1);
+                tvReplyingToTw.setVisibility(View.VISIBLE);
+                tvReplyingToTw.setText("Replying to " + tweetToReplyTo.getUser().getScreenName());
+            }
+            else
+            {
+                tvReplyingToTw.setVisibility(View.INVISIBLE);
+                tvReplyingToTw.setText("");
+            }
+        }
+        tvRemainingChars.setText(String.valueOf(maxChars));
 
         btTweet.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -130,7 +170,7 @@ public class ComposeFragment extends DialogFragment {
                 {
                     btTweet.setEnabled(false);
                     tvRemainingChars.setTextColor(Color.RED);
-                    tvMessage.setText("Maximum 140 characters allowed!");
+                    tvMessage.setText("Maximum " + String.valueOf(maxChars) + " characters allowed!");
                 }
                 else
                 {
@@ -147,36 +187,66 @@ public class ComposeFragment extends DialogFragment {
         //Picasso.with(getApplicationContext()).load(user.getProfileImageUrl()).transform(new RoundedCornersTransformation(5,5)).into(ivProfileImageTw);
         Glide.with(this).load(user.getProfileImageUrl()).apply(RequestOptions.bitmapTransform(new RoundedCornersTransformation(getActivity().getApplicationContext(),5,5))).into(ivProfileImageTw);
 
+
     }
 
     public void onCancelTweet(View view) {
-        lastTweet = new Tweet("",0,null,"",0,0);
+        //lastTweet = new Tweet("",0,null,"",0,0);
         ComposeDialogListener composeDialogListener = (ComposeDialogListener) getActivity();
-        composeDialogListener.onFinishComposeDialog(lastTweet);
+        composeDialogListener.onFinishComposeDialog(newTweet);
 
         // Close the dialog and return back to the parent activity
         dismiss();
     }
 
     public void onPostTweet(View view) {
+        String message = etCompose.getText().toString();
+        if (tweetToReplyTo != null){
+            if (tweetToReplyTo.getUid() > 0) {
+                message = tweetToReplyTo.getUser().getScreenName() + " " + message;
+                client.postStatusUpdateInReplyTo(new JsonHttpResponseHandler() {
+                    @Override
+                    public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                        Tweet tweetResult = Tweet.fromJSON(response);
+
+                        ComposeDialogListener composeDialogListener = (ComposeDialogListener) getActivity();
+                        composeDialogListener.onFinishComposeDialog(tweetResult);
+
+                        // Close the dialog and return back to the parent activity
+                        dismiss();
+                    }
+
+                    @Override
+                    public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                        Toast.makeText(getContext(),errorResponse.toString(), Toast.LENGTH_LONG).show();
+                    }
+                }, message, tweetToReplyTo.getUid());
+            }
+        }
+        else
+        {
+            client.postStatusUpdate(new JsonHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                    newTweet = Tweet.fromJSON(response);
+
+                    ComposeDialogListener composeDialogListener = (ComposeDialogListener) getActivity();
+                    composeDialogListener.onFinishComposeDialog(newTweet);
+
+                    // Close the dialog and return back to the parent activity
+                    Toast.makeText(getContext(), "Tweet posted successfully", Toast.LENGTH_SHORT).show();
+                    dismiss();
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                    Toast.makeText(getContext(),errorResponse.toString(), Toast.LENGTH_LONG).show();
+                }
+            }, message);
+        }
+
         //Toast.makeText(getApplicationContext(),"Post attempt", Toast.LENGTH_LONG).show();
-        client.postStatusUpdate(new JsonHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                lastTweet = Tweet.fromJSON(response);
 
-                ComposeDialogListener composeDialogListener = (ComposeDialogListener) getActivity();
-                composeDialogListener.onFinishComposeDialog(lastTweet);
-
-                // Close the dialog and return back to the parent activity
-                dismiss();
-            }
-
-            @Override
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                Toast.makeText(getContext(),errorResponse.toString(), Toast.LENGTH_LONG).show();
-            }
-        }, etCompose.getText().toString());
 
     }
 

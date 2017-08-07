@@ -51,6 +51,7 @@
             android:hint="@string/new_tweet"
             android:inputType="textMultiLine" />
 
+
         <ImageView
             android:id="@+id/ivProfileImageTw"
             android:layout_width="@dimen/profile_image_tweet_width"
@@ -84,5 +85,15 @@
             android:layout_alignParentStart="true"
             android:layout_alignTop="@+id/tvRemainingChars" />
     </RelativeLayout>
+
+    <TextView
+        android:id="@+id/tvReplyingToTw"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="42dp"
+        android:text="TextView"
+        android:visibility="invisible" />
 
 </RelativeLayout>

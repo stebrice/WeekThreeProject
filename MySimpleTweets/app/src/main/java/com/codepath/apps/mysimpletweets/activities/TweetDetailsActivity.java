@@ -1,15 +1,21 @@
 package com.codepath.apps.mysimpletweets.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.codepath.apps.mysimpletweets.R;
+import com.codepath.apps.mysimpletweets.fragments.ComposeFragment;
 import com.codepath.apps.mysimpletweets.models.Tweet;
+import com.codepath.apps.mysimpletweets.models.User;
 import com.codepath.apps.mysimpletweets.utils.RoundedCornersTransformation;
 
 import org.parceler.Parcels;
@@ -18,7 +24,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class TweetDetailsActivity extends AppCompatActivity {
+public class TweetDetailsActivity extends AppCompatActivity implements ComposeFragment.ComposeDialogListener{
 
     private TextView tvScreenNameDt;
     private TextView tvUserNameDt;
@@ -29,6 +35,8 @@ public class TweetDetailsActivity extends AppCompatActivity {
     private ImageView ivProfileImageDt;
 
     private Tweet currentTweet;
+    private Tweet newTweet;
+    private User connectedUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,8 +44,9 @@ public class TweetDetailsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_tweet_details);
         //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_details);
         //setSupportActionBar(toolbar);
-
+        newTweet = new Tweet("",0,null,"",0,0);
         currentTweet = (Tweet) Parcels.unwrap(getIntent().getParcelableExtra("current_tweet"));
+        connectedUser = (User) Parcels.unwrap(getIntent().getParcelableExtra("connected_user"));
 
         setupViews();
     }
@@ -71,6 +80,35 @@ public class TweetDetailsActivity extends AppCompatActivity {
         tvCreatedAtDt.setText(dateFormatted);
 
         Glide.with(this).load(currentTweet.getUser().getProfileImageUrl()).apply(RequestOptions.bitmapTransform(new RoundedCornersTransformation(getApplicationContext(),5,5))).into(ivProfileImageDt);
+    }
+
+    public void replyToTweet(View view) {
+        showCompose();
+    }
+
+    public void showCompose() {
+//        Intent i = new Intent(TimelineActivity.this, ComposeActivity.class);
+//        i.putExtra("user", Parcels.wrap(user));
+//        startActivityForResult(i, REQUEST_CODE);
+        newTweet = new Tweet("",0,null,"",0,0);
+        FragmentManager fm = getSupportFragmentManager();
+        ComposeFragment composeFragment = ComposeFragment.newInstance(connectedUser, newTweet, currentTweet);
+        composeFragment.show(fm, "fragment_compose");
+    }
+
+    @Override
+    public void onFinishComposeDialog(Tweet tweetDefined) {
+        if (tweetDefined.getUid() > 0){
+            Toast.makeText(getApplicationContext(),"Replied successfully to " + currentTweet.getUser().getScreenName(), Toast.LENGTH_LONG).show();
+            //    insertNewTweetFromReplyAndUpdateFeed(); //INSERT NEW TWEET AT CORRECT POSITION
+            Intent data = new Intent();
+            data.putExtra("new_tweet_from_reply", Parcels.wrap(tweetDefined));
+
+            // Activity finished ok, return the data
+            setResult(RESULT_OK, data); // set result code and bundle data for response
+            finish(); // closes the activity, pass data to parent
+        }
+        return;
     }
 
 }

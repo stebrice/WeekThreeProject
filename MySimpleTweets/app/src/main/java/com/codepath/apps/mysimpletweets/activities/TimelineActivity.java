@@ -135,7 +135,7 @@ public class TimelineActivity extends AppCompatActivity implements ComposeDialog
                     @Override
                     public void onItemClicked(RecyclerView recyclerView, int position, View v) {
                         Tweet currentTweet = aTweets.getItem(position);
-                        showTweetDetails(currentTweet);
+                        showTweetDetails(currentTweet, user);
                         //Toast.makeText(getApplicationContext(), "ITEM CLICKED AT POSITION " + String.valueOf(position), Toast.LENGTH_LONG).show();
                     }
                 }
@@ -230,7 +230,15 @@ public class TimelineActivity extends AppCompatActivity implements ComposeDialog
         // REQUEST_CODE is defined above
         if (resultCode == RESULT_OK && requestCode == REQUEST_CODE) {
             // Extract name value from result extras
-            newTweet = (Tweet) Parcels.unwrap(data.getParcelableExtra("new_tweet"));
+            Tweet receivedTweet = null;
+            receivedTweet = (Tweet) Parcels.unwrap(data.getParcelableExtra("new_tweet_from_reply"));
+            if (receivedTweet == null) {
+                receivedTweet = (Tweet) Parcels.unwrap(data.getParcelableExtra("new_tweet"));
+            }
+
+            if (receivedTweet != null)
+                newTweet = receivedTweet;
+
             insertNewTweetAndUpdateFeed(); //INSERT NEW TWEET AT CORRECT POSITION
             return;
         }
@@ -248,23 +256,26 @@ public class TimelineActivity extends AppCompatActivity implements ComposeDialog
         //aTweets.insert(newTweet,indexToUse);
         tweets.add(indexToUse,newTweet);
         aTweets.notifyItemInserted(indexToUse);
+        rvTweets.scrollToPosition(indexToUse);   // index 0 position
+        sinceID = newTweet.getUid();
     }
 
     public void showCompose() {
 //        Intent i = new Intent(TimelineActivity.this, ComposeActivity.class);
 //        i.putExtra("user", Parcels.wrap(user));
 //        startActivityForResult(i, REQUEST_CODE);
-
+        Tweet tweet = new Tweet("",0,null,"",0,0);
         FragmentManager fm = getSupportFragmentManager();
-        ComposeFragment composeFragment = ComposeFragment.newInstance(user);
+        ComposeFragment composeFragment = ComposeFragment.newInstance(user, tweet);
         composeFragment.show(fm, "fragment_compose");
     }
 
-    public void showTweetDetails(Tweet tweetToUse) {
+    public void showTweetDetails(Tweet tweetToUse, User currentUser) {
         Intent i = new Intent(TimelineActivity.this, TweetDetailsActivity.class);
         i.putExtra("current_tweet", Parcels.wrap(tweetToUse));
-        //startActivityForResult(i, REQUEST_CODE);
-        startActivity(i);
+        i.putExtra("connected_user", Parcels.wrap(currentUser));
+        startActivityForResult(i, REQUEST_CODE);
+        //startActivity(i);
     }
 
 
